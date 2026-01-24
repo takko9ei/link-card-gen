@@ -32,11 +32,16 @@ interface CanvasProps {
     blockId: string,
     newHeight: number,
   ) => void;
+  onBlockUpdate?: (columnId: string, blockId: string, newContent: any) => void;
 }
 
 const PRESET_CANVAS_HEIGHT = 800; // Simulated preset height for overflow testing
 
-export default function Canvas({ state, onBlockResize }: CanvasProps) {
+export default function Canvas({
+  state,
+  onBlockResize,
+  onBlockUpdate,
+}: CanvasProps) {
   return (
     <div
       className="w-full min-h-[600px] p-8 transition-all duration-300 ease-in-out shadow-sm rounded-xl overflow-hidden relative"
@@ -70,15 +75,12 @@ export default function Canvas({ state, onBlockResize }: CanvasProps) {
           let currentColumnHeight = 0;
 
           return (
-            <div
-              key={column.id}
-              className="flex flex-col gap-4 min-h-[200px]" // Removed dashed border/placeholder style for cleaner look
-            >
+            <div key={column.id} className="flex flex-col gap-4 min-h-[200px]">
               {column.blocks.length > 0 ? (
                 column.blocks.map((block) => {
                   const isOverflow =
                     currentColumnHeight + block.height > PRESET_CANVAS_HEIGHT;
-                  currentColumnHeight += block.height + 16; // +16 for gap estimate (className="gap-4" is 16px)
+                  currentColumnHeight += block.height + 16; // +16 for gap estimate
 
                   return (
                     <BlockWrapper
@@ -92,7 +94,12 @@ export default function Canvas({ state, onBlockResize }: CanvasProps) {
                     >
                       {/* Render Specific Blocks Logic */}
                       {block.type === "header" && (
-                        <HeaderBlock content={block.content} />
+                        <HeaderBlock
+                          content={block.content}
+                          onUpdate={(newContent) =>
+                            onBlockUpdate?.(column.id, block.id, newContent)
+                          }
+                        />
                       )}
                       {block.type === "gallery" && (
                         <GalleryBlock content={block.content} />

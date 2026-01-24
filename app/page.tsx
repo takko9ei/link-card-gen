@@ -126,6 +126,26 @@ export default function Home() {
     }));
   };
 
+  const handleBlockUpdate = (
+    columnId: string,
+    blockId: string,
+    newContent: any,
+  ) => {
+    setProjectState((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) => {
+        if (col.id !== columnId) return col;
+        return {
+          ...col,
+          blocks: col.blocks.map((block) => {
+            if (block.id !== blockId) return block;
+            return { ...block, content: newContent };
+          }),
+        };
+      }),
+    }));
+  };
+
   return (
     <div className="flex h-screen w-full bg-white text-gray-900">
       {/* Left Column: Settings & Editor */}
@@ -236,7 +256,11 @@ export default function Home() {
 
       {/* Right Column: Preview */}
       <div className="flex-1 bg-gray-50 p-12 overflow-y-auto flex items-center justify-center">
-        <Canvas state={projectState} onBlockResize={handleBlockResize} />
+        <Canvas
+          state={projectState}
+          onBlockResize={handleBlockResize}
+          onBlockUpdate={handleBlockUpdate}
+        />
       </div>
     </div>
   );
