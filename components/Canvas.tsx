@@ -1,5 +1,8 @@
 import React from "react";
 import BlockWrapper from "./BlockWrapper";
+import HeaderBlock from "./blocks/HeaderBlock";
+import GalleryBlock from "./blocks/GalleryBlock";
+import TextBlock from "./blocks/TextBlock";
 
 // Define types locally or import if shared
 interface Block {
@@ -87,12 +90,23 @@ export default function Canvas({ state, onBlockResize }: CanvasProps) {
                         onBlockResize?.(column.id, block.id, newHeight)
                       }
                     >
-                      <div className="p-4 text-center text-gray-400 text-sm">
-                        {block.content || "Empty Block"}
-                        <div className="mt-2 text-xs opacity-50">
-                          Height: {Math.round(block.height)}px
+                      {/* Render Specific Blocks Logic */}
+                      {block.type === "header" && (
+                        <HeaderBlock content={block.content} />
+                      )}
+                      {block.type === "gallery" && (
+                        <GalleryBlock content={block.content} />
+                      )}
+                      {block.type === "text" && (
+                        <TextBlock content={block.content} />
+                      )}
+
+                      {/* Fallback for unknown types */}
+                      {!["header", "gallery", "text"].includes(block.type) && (
+                        <div className="p-4 text-center text-gray-400 text-sm">
+                          Unknown Block Type: {block.type}
                         </div>
-                      </div>
+                      )}
                     </BlockWrapper>
                   );
                 })

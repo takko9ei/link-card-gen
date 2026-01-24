@@ -33,17 +33,24 @@ export default function Home() {
         blocks: [
           {
             id: "b1",
-            type: "text",
-            title: "HEADER",
-            content: "Welcome to My Page",
-            height: 150,
+            type: "header",
+            title: "PROFILE",
+            content: {
+              avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Felix",
+              name: "Felix The Cat",
+              tags: ["Designer", "Developer", "Nomad"],
+              bio: "Creating digital experiences from coffee shops around the world.",
+            },
+            height: 160,
           },
           {
             id: "b2",
-            type: "link",
-            title: "LINK",
-            content: "Visit my Website",
-            height: 100,
+            type: "text",
+            title: "ABOUT",
+            content: {
+              text: "I specialize in React, Next.js, and Tailwind CSS. Open for freelance work.",
+            },
+            height: 120,
           },
         ],
       },
@@ -52,9 +59,15 @@ export default function Home() {
         blocks: [
           {
             id: "b3",
-            type: "image",
-            title: "GALLERY",
-            content: "Photo Placeholder",
+            type: "gallery",
+            title: "LATEST SHOTS",
+            content: {
+              images: [
+                "https://picsum.photos/seed/1/400/400",
+                "https://picsum.photos/seed/2/400/400",
+                "https://picsum.photos/seed/3/400/400",
+              ],
+            },
             height: 300,
           },
         ],
