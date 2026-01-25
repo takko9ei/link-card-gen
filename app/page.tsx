@@ -16,6 +16,7 @@ interface Block {
 interface Column {
   id: string;
   blocks: Block[];
+  blockGap: number;
 }
 
 interface ProjectState {
@@ -30,6 +31,7 @@ export default function Home() {
     columns: [
       {
         id: "col-1",
+        blockGap: 24,
         blocks: [
           {
             id: "b1",
@@ -37,8 +39,8 @@ export default function Home() {
             title: "PROFILE",
             content: {
               avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Felix",
-              name: "Felix The Cat",
-              tags: ["Designer", "Developer", "Nomad"],
+              name: "Ameato9ei",
+              tags: ["百合", "SF系", "观鸟"],
               bio: "Creating digital experiences from coffee shops around the world.",
             },
             height: 160,
@@ -56,6 +58,7 @@ export default function Home() {
       },
       {
         id: "col-2",
+        blockGap: 24,
         blocks: [
           {
             id: "b3",
@@ -86,7 +89,11 @@ export default function Home() {
       if (count > prev.columns.length) {
         // Add columns
         for (let i = prev.columns.length; i < count; i++) {
-          newColumns.push({ id: `col-${Date.now()}-${i}`, blocks: [] });
+          newColumns.push({
+            id: `col-${Date.now()}-${i}`,
+            blockGap: 24,
+            blocks: [],
+          });
         }
       } else if (count < prev.columns.length) {
         // Remove columns (and their blocks!)
