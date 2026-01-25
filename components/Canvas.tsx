@@ -233,18 +233,27 @@ export default function Canvas({
                           onTitleChange={(newTitle) =>
                             onBlockTitleChange?.(column.id, block.id, newTitle)
                           }
-                          onAddImage={() => {
-                            if (block.type === "gallery" && onBlockUpdate) {
-                              const newContent = {
-                                ...block.content,
-                                images: [
-                                  ...block.content.images,
-                                  `https://picsum.photos/seed/${Date.now()}/400/400`,
-                                ],
-                              };
-                              onBlockUpdate(column.id, block.id, newContent);
-                            }
-                          }}
+                          onAddImage={
+                            block.type === "gallery" &&
+                            block.content.images.length < 4
+                              ? () => {
+                                  if (onBlockUpdate) {
+                                    const newContent = {
+                                      ...block.content,
+                                      images: [
+                                        ...block.content.images,
+                                        `https://picsum.photos/seed/${Date.now()}/400/400`,
+                                      ],
+                                    };
+                                    onBlockUpdate(
+                                      column.id,
+                                      block.id,
+                                      newContent,
+                                    );
+                                  }
+                                }
+                              : undefined
+                          }
                         >
                           {/* Render Specific Blocks Logic */}
                           {block.type === "header" && (
