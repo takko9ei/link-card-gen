@@ -1,8 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  useSensors,
+  useSensor,
+  PointerSensor,
+  closestCorners,
+  DragStartEvent,
+  DragOverEvent,
+  DragEndEvent,
+  defaultDropAnimationSideEffects,
+  DropAnimation,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+
 import BlockWrapper from "./BlockWrapper";
 import HeaderBlock from "./blocks/HeaderBlock";
 import GalleryBlock from "./blocks/GalleryBlock";
 import TextBlock from "./blocks/TextBlock";
+import SortableBlock from "./SortableBlock";
 
 // Define types locally or import if shared
 interface Block {
@@ -34,104 +54,235 @@ interface CanvasProps {
     newHeight: number,
   ) => void;
   onBlockUpdate?: (columnId: string, blockId: string, newContent: any) => void;
+  onBlockMove?: (
+    activeId: string,
+    overId: string,
+    activeColumnId: string,
+    overColumnId: string,
+  ) => void;
 }
 
 const PRESET_CANVAS_HEIGHT = 800; // Simulated preset height for overflow testing
+
+const dropAnimation: DropAnimation = {
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: {
+      active: {
+        opacity: "0.4",
+      },
+    },
+  }),
+};
 
 export default function Canvas({
   state,
   onBlockResize,
   onBlockUpdate,
+  onBlockMove,
 }: CanvasProps) {
-  return (
-    <div
-      className="w-full min-h-[600px] p-8 transition-all duration-300 ease-in-out shadow-sm rounded-xl overflow-hidden relative"
-      style={{
-        backgroundColor: state.background.startsWith("#")
-          ? state.background
-          : undefined,
-        backgroundImage: state.background.startsWith("http")
-          ? `url(${state.background})`
-          : undefined,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
-      {/* Height Marker for Visualization */}
-      <div
-        className="absolute top-0 right-0 w-2 border-r-2 border-red-300 pointer-events-none opacity-50"
-        style={{ height: PRESET_CANVAS_HEIGHT }}
-        title={`Max Height: ${PRESET_CANVAS_HEIGHT}px`}
-      />
+  const [activeId, setActiveId] = useState<string | null>(null);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+  );
+
+  const findColumn = (id: string) => {
+    return state.columns.find(
+      (col) => col.blocks.some((block) => block.id === id) || col.id === id,
+    );
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeColumn = findColumn(activeId);
+    const overColumn = findColumn(overId);
+
+    if (!activeColumn || !overColumn || activeColumn === overColumn) {
+      return;
+    }
+
+    // Trigger move when over a different column
+    if (onBlockMove) {
+      onBlockMove(activeId, overId, activeColumn.id, overColumn.id);
+    }
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    const activeId = active.id as string;
+    const overId = over ? (over.id as string) : null;
+
+    if (!overId) {
+      setActiveId(null);
+      return;
+    }
+
+    const activeColumn = findColumn(activeId);
+    const overColumn = findColumn(overId);
+
+    if (activeColumn && overColumn) {
+      if (onBlockMove) {
+        onBlockMove(activeId, overId, activeColumn.id, overColumn.id);
+      }
+    }
+
+    setActiveId(null);
+  };
+
+  // Helper to find the active block object for the Overlay
+  const getActiveBlock = () => {
+    for (const col of state.columns) {
+      const block = col.blocks.find((b) => b.id === activeId);
+      if (block) return block;
+    }
+    return null;
+  };
+
+  const activeBlock = getActiveBlock();
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
       <div
-        className="w-full h-full grid items-start"
+        className="w-full min-h-[600px] p-8 transition-all duration-300 ease-in-out shadow-sm rounded-xl overflow-hidden relative"
         style={{
-          gridTemplateColumns: state.gridTemplateColumns,
-          gap: `${state.columnGap}px`,
+          backgroundColor: state.background.startsWith("#")
+            ? state.background
+            : undefined,
+          backgroundImage: state.background.startsWith("http")
+            ? `url(${state.background})`
+            : undefined,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
         }}
       >
-        {state.columns.map((column, index) => {
-          // Calculate accumulated height to check for overflow
-          let currentColumnHeight = 0;
+        {/* Height Marker for Visualization */}
+        <div
+          className="absolute top-0 right-0 w-2 border-r-2 border-red-300 pointer-events-none opacity-50"
+          style={{ height: PRESET_CANVAS_HEIGHT }}
+          title={`Max Height: ${PRESET_CANVAS_HEIGHT}px`}
+        />
 
-          return (
-            <div
-              key={column.id}
-              className="flex flex-col min-h-[200px]"
-              style={{ gap: `${state.rowGap}px` }}
-            >
-              {column.blocks.length > 0 ? (
-                column.blocks.map((block) => {
-                  const isOverflow =
-                    currentColumnHeight + block.height > PRESET_CANVAS_HEIGHT;
-                  currentColumnHeight += block.height + 16; // +16 for gap estimate
+        <div
+          className="w-full h-full grid items-start"
+          style={{
+            gridTemplateColumns: state.gridTemplateColumns,
+            gap: `${state.columnGap}px`,
+          }}
+        >
+          {state.columns.map((column, index) => {
+            // Calculate accumulated height to check for overflow
+            let currentColumnHeight = 0;
 
-                  return (
-                    <BlockWrapper
-                      key={block.id}
-                      title={block.title}
-                      height={block.height}
-                      isOverflow={isOverflow}
-                      onResize={(newHeight) =>
-                        onBlockResize?.(column.id, block.id, newHeight)
-                      }
-                    >
-                      {/* Render Specific Blocks Logic */}
-                      {block.type === "header" && (
-                        <HeaderBlock
-                          content={block.content}
-                          onUpdate={(newContent) =>
-                            onBlockUpdate?.(column.id, block.id, newContent)
+            return (
+              <SortableContext
+                key={column.id}
+                id={column.id}
+                items={column.blocks.map((b) => b.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div
+                  className="flex flex-col min-h-[200px]"
+                  style={{ gap: `${state.rowGap}px` }}
+                >
+                  {column.blocks.map((block) => {
+                    const isOverflow =
+                      currentColumnHeight + block.height > PRESET_CANVAS_HEIGHT;
+                    currentColumnHeight += block.height + 16; // +16 for gap estimate
+
+                    return (
+                      <SortableBlock key={block.id} id={block.id}>
+                        <BlockWrapper
+                          title={block.title}
+                          height={block.height}
+                          isOverflow={isOverflow}
+                          onResize={(newHeight) =>
+                            onBlockResize?.(column.id, block.id, newHeight)
                           }
-                        />
-                      )}
-                      {block.type === "gallery" && (
-                        <GalleryBlock content={block.content} />
-                      )}
-                      {block.type === "text" && (
-                        <TextBlock content={block.content} />
-                      )}
+                        >
+                          {/* Render Specific Blocks Logic */}
+                          {block.type === "header" && (
+                            <HeaderBlock
+                              content={block.content}
+                              onUpdate={(newContent) =>
+                                onBlockUpdate?.(column.id, block.id, newContent)
+                              }
+                            />
+                          )}
+                          {block.type === "gallery" && (
+                            <GalleryBlock content={block.content} />
+                          )}
+                          {block.type === "text" && (
+                            <TextBlock content={block.content} />
+                          )}
 
-                      {/* Fallback for unknown types */}
-                      {!["header", "gallery", "text"].includes(block.type) && (
-                        <div className="p-4 text-center text-gray-400 text-sm">
-                          Unknown Block Type: {block.type}
-                        </div>
-                      )}
-                    </BlockWrapper>
-                  );
-                })
-              ) : (
-                // Empty state for column
-                <div className="border-2 border-dashed border-gray-300/50 rounded-lg h-[200px] bg-white/30 backdrop-blur-sm flex items-center justify-center text-gray-400">
-                  Column {index + 1}
+                          {/* Fallback for unknown types */}
+                          {!["header", "gallery", "text"].includes(
+                            block.type,
+                          ) && (
+                            <div className="p-4 text-center text-gray-400 text-sm">
+                              Unknown Block Type: {block.type}
+                            </div>
+                          )}
+                        </BlockWrapper>
+                      </SortableBlock>
+                    );
+                  })}
+
+                  {column.blocks.length === 0 && (
+                    // Empty state for column needs to be droppable, SortableContext covers it if id matches
+                    <div className="border-2 border-dashed border-gray-300/50 rounded-lg h-[200px] bg-white/30 backdrop-blur-sm flex items-center justify-center text-gray-400">
+                      Column {index + 1}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </SortableContext>
+            );
+          })}
+        </div>
       </div>
-    </div>
+
+      <DragOverlay dropAnimation={dropAnimation}>
+        {activeId && activeBlock ? (
+          <div className="opacity-80">
+            <BlockWrapper
+              title={activeBlock.title}
+              height={activeBlock.height}
+              isOverflow={false}
+              onResize={() => {}}
+            >
+              {/* Render Specific Blocks Logic */}
+              {activeBlock.type === "header" && (
+                <HeaderBlock content={activeBlock.content} />
+              )}
+              {activeBlock.type === "gallery" && (
+                <GalleryBlock content={activeBlock.content} />
+              )}
+              {activeBlock.type === "text" && (
+                <TextBlock content={activeBlock.content} />
+              )}
+            </BlockWrapper>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

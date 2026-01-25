@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Canvas from "@/components/Canvas";
+import { arrayMove } from "@dnd-kit/sortable";
 
 // Re-defining these here for state management.
 // Ideally these should be in a separate types file but for now keeping it co-located as requested.
@@ -218,6 +219,81 @@ export default function Home() {
     });
   };
 
+  const handleBlockMove = (
+    activeId: string,
+    overId: string,
+    activeColumnId: string,
+    overColumnId: string,
+  ) => {
+    setProjectState((prev) => {
+      const activeColumn = prev.columns.find(
+        (col) => col.id === activeColumnId,
+      );
+      const overColumn = prev.columns.find((col) => col.id === overColumnId);
+
+      if (!activeColumn || !overColumn) return prev;
+
+      const activeBlockIndex = activeColumn.blocks.findIndex(
+        (b) => b.id === activeId,
+      );
+      const overBlockIndex = overColumn.blocks.findIndex(
+        (b) => b.id === overId,
+      );
+
+      let newColumns = [...prev.columns];
+
+      if (activeColumnId === overColumnId) {
+        // Same column reordering
+        const newCol = {
+          ...activeColumn,
+          blocks: arrayMove(
+            activeColumn.blocks,
+            activeBlockIndex,
+            overBlockIndex,
+          ),
+        };
+
+        newColumns = newColumns.map((col) =>
+          col.id === activeColumnId ? newCol : col,
+        );
+      } else {
+        // Moving to different column
+        const newActiveCol = {
+          ...activeColumn,
+          blocks: [...activeColumn.blocks],
+        };
+        const newOverCol = {
+          ...overColumn,
+          blocks: [...overColumn.blocks],
+        };
+
+        const [movedBlock] = newActiveCol.blocks.splice(activeBlockIndex, 1);
+
+        // If dropping on empty column or valid target, ensure correct index
+        // If overId is the column ID itself (empty column case), push to end
+        let insertIndex = overBlockIndex;
+        if (overId === overColumnId) {
+          insertIndex = newOverCol.blocks.length;
+        } else if (insertIndex === -1) {
+          insertIndex = newOverCol.blocks.length;
+        }
+
+        newOverCol.blocks.splice(insertIndex, 0, movedBlock);
+
+        newColumns = newColumns.map((col) => {
+          if (col.id === activeColumnId) return newActiveCol;
+          if (col.id === overColumnId) return newOverCol;
+          return col;
+        });
+      }
+
+      return {
+        ...prev,
+        columns: newColumns,
+      };
+    });
+  };
+
   return (
     <div className="flex h-screen w-full bg-white text-gray-900">
       {/* Left Column: Settings & Editor */}
@@ -359,6 +435,7 @@ export default function Home() {
           state={projectState}
           onBlockResize={handleBlockResize}
           onBlockUpdate={handleBlockUpdate}
+          onBlockMove={handleBlockMove}
         />
       </div>
     </div>
