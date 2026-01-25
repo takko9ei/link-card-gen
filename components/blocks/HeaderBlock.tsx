@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import { X, Plus } from "lucide-react";
 import InlineText from "@/components/InlineText";
 import ImageCropperModal from "@/components/ImageCropperModal";
 
@@ -92,15 +93,48 @@ export default function HeaderBlock({ content, onUpdate }: HeaderBlockProps) {
         />
 
         {/* Tags (Static for now, can make interactive later if needed) */}
-        <div className="flex flex-wrap gap-2 my-1">
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2 my-1 items-center">
           {content.tags.map((tag, i) => (
-            <span
+            <div
               key={i}
-              className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs font-medium"
+              className="group flex items-center gap-1 bg-gray-100 px-2 py-0.5 rounded-full text-xs font-medium hover:bg-gray-200 transition-colors"
             >
-              {tag}
-            </span>
+              <InlineText
+                value={tag}
+                onChange={(newVal) => {
+                  const newTags = [...content.tags];
+                  newTags[i] = newVal;
+                  handleUpdate("tags", newTags);
+                }}
+                tagName="span"
+                className="min-w-[20px]"
+              />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const newTags = content.tags.filter((_, idx) => idx !== i);
+                  handleUpdate("tags", newTags);
+                }}
+                className="hidden group-hover:block text-gray-400 hover:text-red-500 transition-colors"
+              >
+                <X size={12} />
+              </button>
+            </div>
           ))}
+
+          {/* Add Tag Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              const newTags = [...content.tags, "New Tag"];
+              handleUpdate("tags", newTags);
+            }}
+            className="w-6 h-6 flex items-center justify-center rounded-full border border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-all"
+            title="Add Tag"
+          >
+            <Plus size={14} />
+          </button>
         </div>
 
         <InlineText

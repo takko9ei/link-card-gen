@@ -273,7 +273,12 @@ export default function Canvas({
                             />
                           )}
                           {block.type === "text" && (
-                            <TextBlock content={block.content} />
+                            <TextBlock
+                              content={block.content}
+                              onUpdate={(newContent) =>
+                                onBlockUpdate?.(column.id, block.id, newContent)
+                              }
+                            />
                           )}
 
                           {/* Fallback for unknown types */}
