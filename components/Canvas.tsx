@@ -44,6 +44,10 @@ interface ProjectState {
   blockSpacing: number;
   background: string;
   gridTemplateColumns: string;
+  meta?: {
+    bgImage?: string;
+    blockOpacity?: number;
+  };
 }
 
 interface CanvasProps {
@@ -178,19 +182,21 @@ export default function Canvas({
           backgroundColor: state.background.startsWith("#")
             ? state.background
             : undefined,
-          backgroundImage: state.background.startsWith("http")
-            ? `url(${state.background})`
-            : undefined,
+          backgroundImage: state.meta?.bgImage
+            ? `url(${state.meta.bgImage})`
+            : state.background.startsWith("http")
+              ? `url(${state.background})`
+              : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
         {/* Height Marker for Visualization */}
-        <div
+        {/* <div
           className="absolute top-0 right-0 w-2 border-r-2 border-red-300 pointer-events-none opacity-50"
           style={{ height: PRESET_CANVAS_HEIGHT }}
           title={`Max Height: ${PRESET_CANVAS_HEIGHT}px`}
-        />
+        /> */}
 
         <div
           className="w-full h-full grid items-start"
@@ -242,7 +248,7 @@ export default function Canvas({
                                       ...block.content,
                                       images: [
                                         ...block.content.images,
-                                        `https://picsum.photos/seed/${Date.now()}/400/400`,
+                                        "https://placehold.co/600x400?text=Image",
                                       ],
                                     };
                                     onBlockUpdate(
@@ -254,6 +260,7 @@ export default function Canvas({
                                 }
                               : undefined
                           }
+                          blockOpacity={state.meta?.blockOpacity ?? 1}
                         >
                           {/* Render Specific Blocks Logic */}
                           {block.type === "header" && (
@@ -315,6 +322,7 @@ export default function Canvas({
               height={activeBlock.height}
               isOverflow={false}
               onResize={() => {}}
+              blockOpacity={state.meta?.blockOpacity ?? 1}
             >
               {/* Render Specific Blocks Logic */}
               {activeBlock.type === "header" && (

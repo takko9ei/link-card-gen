@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Canvas from "@/components/Canvas";
 import { arrayMove } from "@dnd-kit/sortable";
+import { Upload, Trash2 } from "lucide-react";
+import ImageCropperModal from "@/components/ImageCropperModal";
 
 // Re-defining these here for state management.
 // Ideally these should be in a separate types file but for now keeping it co-located as requested.
@@ -26,24 +28,38 @@ interface ProjectState {
   blockSpacing: number;
   background: string;
   gridTemplateColumns: string;
+  meta?: {
+    bgImage?: string;
+    blockOpacity?: number;
+  };
 }
 
 export default function Home() {
+  const [bgCropper, setBgCropper] = useState<{
+    isOpen: boolean;
+    imageSrc: string;
+  }>({
+    isOpen: false,
+    imageSrc: "",
+  });
+  // Need to import useRef
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+
   const [projectState, setProjectState] = useState<ProjectState>({
     columns: [
       {
         id: "col-1",
-        blockGap: 24,
+        blockGap: 16,
         blocks: [
           {
             id: "b1",
             type: "header",
             title: "PROFILE",
             content: {
-              avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=Felix",
+              avatar: "https://placehold.co/200?text=Avatar",
               name: "Ameato9ei",
               tags: ["百合", "SF系", "观鸟"],
-              bio: "Creating digital experiences from coffee shops around the world.",
+              bio: "Hi, I'm Ameato9ei. Nice to meet you!",
             },
             height: 160,
           },
@@ -52,7 +68,7 @@ export default function Home() {
             type: "text",
             title: "ABOUT",
             content: {
-              text: "I specialize in React, Next.js, and Tailwind CSS. Open for freelance work.",
+              text: "",
             },
             height: 120,
           },
@@ -60,7 +76,7 @@ export default function Home() {
       },
       {
         id: "col-2",
-        blockGap: 24,
+        blockGap: 16,
         blocks: [
           {
             id: "b3",
@@ -68,9 +84,9 @@ export default function Home() {
             title: "LATEST SHOTS",
             content: {
               images: [
-                "https://picsum.photos/seed/1/400/400",
-                "https://picsum.photos/seed/2/400/400",
-                "https://picsum.photos/seed/3/400/400",
+                "https://placehold.co/600x400?text=Image",
+                "https://placehold.co/600x400?text=Image",
+                "https://placehold.co/600x400?text=Image",
               ],
             },
             height: 300,
@@ -79,10 +95,13 @@ export default function Home() {
       },
     ],
 
-    columnGap: 24,
+    columnGap: 16,
     blockSpacing: 16,
     background: "#f3f4f6",
     gridTemplateColumns: "2fr 1fr",
+    meta: {
+      blockOpacity: 1.0,
+    },
   });
 
   const updateColumns = (count: number) => {
@@ -95,7 +114,7 @@ export default function Home() {
         for (let i = prev.columns.length; i < count; i++) {
           newColumns.push({
             id: `col-${Date.now()}-${i}`,
-            blockGap: 24,
+            blockGap: 16,
             blocks: [],
           });
         }
@@ -180,7 +199,7 @@ export default function Home() {
           type: "header",
           title: "NEW HEADER",
           content: {
-            avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=New",
+            avatar: "https://placehold.co/200?text=Avatar",
             name: "New Name",
             tags: ["New Tag"],
             bio: "New bio description.",
@@ -194,9 +213,9 @@ export default function Home() {
           title: "NEW GALLERY",
           content: {
             images: [
-              "https://picsum.photos/seed/100/400/400",
-              "https://picsum.photos/seed/101/400/400",
-              "https://picsum.photos/seed/102/400/400",
+              "https://placehold.co/600x400?text=Image",
+              "https://placehold.co/600x400?text=Image",
+              "https://placehold.co/600x400?text=Image",
             ],
           },
           height: 300,
@@ -414,43 +433,141 @@ export default function Home() {
             />
           </div>
 
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Block Opacity
+              </label>
+              <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">
+                {Math.round((projectState.meta?.blockOpacity ?? 1) * 100)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={projectState.meta?.blockOpacity ?? 1}
+              onChange={(e) =>
+                setProjectState((prev) => ({
+                  ...prev,
+                  meta: {
+                    ...prev.meta,
+                    blockOpacity: parseFloat(e.target.value),
+                  },
+                }))
+              }
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-900"
+            />
+          </div>
+
           {/* Background Control */}
           <div className="space-y-4">
             <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
               Canvas Background
             </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="color"
-                value={
-                  projectState.background.startsWith("#")
-                    ? projectState.background
-                    : "#ffffff"
-                }
-                onChange={(e) =>
-                  setProjectState((prev) => ({
-                    ...prev,
-                    background: e.target.value,
-                  }))
-                }
-                className="w-10 h-10 rounded cursor-pointer border-0 p-0 overflow-hidden"
-              />
-              <input
-                type="text"
-                placeholder="Or enter Image URL"
-                value={
-                  projectState.background.startsWith("http")
-                    ? projectState.background
-                    : ""
-                }
-                onChange={(e) =>
-                  setProjectState((prev) => ({
-                    ...prev,
-                    background: e.target.value,
-                  }))
-                }
-                className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
-              />
+            <div className="flex flex-col gap-3">
+              {/* Color Picker */}
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={
+                    projectState.background.startsWith("#")
+                      ? projectState.background
+                      : "#ffffff"
+                  }
+                  onChange={(e) =>
+                    setProjectState((prev) => ({
+                      ...prev,
+                      background: e.target.value,
+                    }))
+                  }
+                  className="w-full h-10 rounded cursor-pointer border-0 p-0 overflow-hidden"
+                />
+              </div>
+
+              {/* Background Image Upload */}
+              <div className="flex flex-col gap-2">
+                <input
+                  type="file"
+                  ref={bgFileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const file = e.target.files[0];
+                      const reader = new FileReader();
+                      reader.addEventListener("load", () => {
+                        setBgCropper({
+                          isOpen: true,
+                          imageSrc: reader.result?.toString() || "",
+                        });
+                      });
+                      reader.readAsDataURL(file);
+                      e.target.value = "";
+                    }
+                  }}
+                  accept="image/*"
+                  className="hidden"
+                />
+
+                {!projectState.meta?.bgImage ? (
+                  <button
+                    onClick={() => bgFileInputRef.current?.click()}
+                    className="flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors border border-gray-200"
+                  >
+                    <Upload size={16} />
+                    Upload Background
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                    <div className="w-12 h-12 rounded overflow-hidden bg-gray-200 flex-shrink-0">
+                      <img
+                        src={projectState.meta.bgImage}
+                        alt="Background Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex flex-1 gap-2">
+                      <button
+                        onClick={() => bgFileInputRef.current?.click()}
+                        className="flex-1 py-1.5 px-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 rounded text-xs font-medium transition-colors"
+                      >
+                        Change
+                      </button>
+                      <button
+                        onClick={() =>
+                          setProjectState((prev) => ({
+                            ...prev,
+                            meta: { ...prev.meta, bgImage: undefined },
+                          }))
+                        }
+                        className="p-1.5 bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 text-gray-400 hover:text-red-500 rounded transition-colors"
+                        title="Remove Background"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Background Cropper */}
+              {bgCropper.isOpen && (
+                <ImageCropperModal
+                  isOpen={bgCropper.isOpen}
+                  imageSrc={bgCropper.imageSrc}
+                  aspect={undefined} // Free aspect ratio for background
+                  onCancel={() =>
+                    setBgCropper((prev) => ({ ...prev, isOpen: false }))
+                  }
+                  onCropComplete={(newUrl) => {
+                    setProjectState((prev) => ({
+                      ...prev,
+                      meta: { ...prev.meta, bgImage: newUrl },
+                    }));
+                    setBgCropper((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                />
+              )}
             </div>
 
             {/* Add Content Section */}
