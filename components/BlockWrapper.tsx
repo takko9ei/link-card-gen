@@ -7,14 +7,21 @@ interface BlockWrapperProps {
   height: number;
   isOverflow: boolean;
   onResize: (height: number) => void;
+  onDelete?: () => void;
+  onTitleChange?: (newTitle: string) => void;
   children: React.ReactNode;
 }
+
+import { X } from "lucide-react";
+import InlineText from "./InlineText";
 
 export default function BlockWrapper({
   title,
   height,
   isOverflow,
   onResize,
+  onDelete,
+  onTitleChange,
   children,
 }: BlockWrapperProps) {
   const [isResizing, setIsResizing] = useState(false);
@@ -62,11 +69,28 @@ export default function BlockWrapper({
       `}
       style={{ height: `${height}px` }}
     >
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/50">
-        <h3 className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none">
-          {title}
-        </h3>
+      <div className="flex-shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none flex-1">
+          <InlineText
+            value={title}
+            onChange={(newVal) => onTitleChange?.(newVal)}
+            className="hover:bg-gray-200/50 -ml-1 pl-1 pr-1 rounded"
+            tagName="span"
+          />
+        </div>
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100/50"
+            title="Remove Block"
+            onPointerDown={(e) => e.stopPropagation()} // Prevent DnD start
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Content Content Slot */}

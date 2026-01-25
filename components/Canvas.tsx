@@ -41,7 +41,7 @@ interface Column {
 interface ProjectState {
   columns: Column[];
   columnGap: number;
-  rowGap: number;
+  blockSpacing: number;
   background: string;
   gridTemplateColumns: string;
 }
@@ -59,6 +59,12 @@ interface CanvasProps {
     overId: string,
     activeColumnId: string,
     overColumnId: string,
+  ) => void;
+  onBlockDelete?: (columnId: string, blockId: string) => void;
+  onBlockTitleChange?: (
+    columnId: string,
+    blockId: string,
+    newTitle: string,
   ) => void;
 }
 
@@ -78,7 +84,10 @@ export default function Canvas({
   state,
   onBlockResize,
   onBlockUpdate,
+
   onBlockMove,
+  onBlockDelete,
+  onBlockTitleChange,
 }: CanvasProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -155,6 +164,7 @@ export default function Canvas({
 
   return (
     <DndContext
+      id="canvas-dnd-context"
       sensors={sensors}
       collisionDetection={closestCorners}
       onDragStart={handleDragStart}
@@ -201,7 +211,7 @@ export default function Canvas({
               >
                 <div
                   className="flex flex-col min-h-[200px]"
-                  style={{ gap: `${state.rowGap}px` }}
+                  style={{ gap: `${state.blockSpacing}px` }}
                 >
                   {column.blocks.map((block) => {
                     const isOverflow =
@@ -216,6 +226,10 @@ export default function Canvas({
                           isOverflow={isOverflow}
                           onResize={(newHeight) =>
                             onBlockResize?.(column.id, block.id, newHeight)
+                          }
+                          onDelete={() => onBlockDelete?.(column.id, block.id)}
+                          onTitleChange={(newTitle) =>
+                            onBlockTitleChange?.(column.id, block.id, newTitle)
                           }
                         >
                           {/* Render Specific Blocks Logic */}

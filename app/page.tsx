@@ -23,7 +23,7 @@ interface Column {
 interface ProjectState {
   columns: Column[];
   columnGap: number;
-  rowGap: number;
+  blockSpacing: number;
   background: string;
   gridTemplateColumns: string;
 }
@@ -80,7 +80,7 @@ export default function Home() {
     ],
 
     columnGap: 24,
-    rowGap: 15,
+    blockSpacing: 16,
     background: "#f3f4f6",
     gridTemplateColumns: "2fr 1fr",
   });
@@ -294,6 +294,39 @@ export default function Home() {
     });
   };
 
+  const handleBlockDelete = (columnId: string, blockId: string) => {
+    setProjectState((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) => {
+        if (col.id !== columnId) return col;
+        return {
+          ...col,
+          blocks: col.blocks.filter((b) => b.id !== blockId),
+        };
+      }),
+    }));
+  };
+
+  const handleBlockTitleChange = (
+    columnId: string,
+    blockId: string,
+    newTitle: string,
+  ) => {
+    setProjectState((prev) => ({
+      ...prev,
+      columns: prev.columns.map((col) => {
+        if (col.id !== columnId) return col;
+        return {
+          ...col,
+          blocks: col.blocks.map((b) => {
+            if (b.id !== blockId) return b;
+            return { ...b, title: newTitle };
+          }),
+        };
+      }),
+    }));
+  };
+
   return (
     <div className="flex h-screen w-full bg-white text-gray-900">
       {/* Left Column: Settings & Editor */}
@@ -349,6 +382,32 @@ export default function Home() {
                 setProjectState((prev) => ({
                   ...prev,
                   columnGap: parseInt(e.target.value),
+                }))
+              }
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-900"
+            />
+          </div>
+
+          {/* Block Spacing Control */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Block Spacing
+              </label>
+              <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">
+                {projectState.blockSpacing}px
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              step="4"
+              value={projectState.blockSpacing}
+              onChange={(e) =>
+                setProjectState((prev) => ({
+                  ...prev,
+                  blockSpacing: parseInt(e.target.value),
                 }))
               }
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-gray-900"
@@ -436,6 +495,8 @@ export default function Home() {
           onBlockResize={handleBlockResize}
           onBlockUpdate={handleBlockUpdate}
           onBlockMove={handleBlockMove}
+          onBlockDelete={handleBlockDelete}
+          onBlockTitleChange={handleBlockTitleChange}
         />
       </div>
     </div>
