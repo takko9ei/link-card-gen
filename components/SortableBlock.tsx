@@ -29,8 +29,15 @@ export default function SortableBlock({ id, children }: SortableBlockProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, {
+            dragHandleProps: listeners,
+          } as any);
+        }
+        return child;
+      })}
     </div>
   );
 }

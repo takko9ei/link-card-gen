@@ -6,13 +6,17 @@ interface BlockWrapperProps {
   title: string;
   height: number;
   isOverflow: boolean;
+
   onResize: (height: number) => void;
   onDelete?: () => void;
   onTitleChange?: (newTitle: string) => void;
+  type?: string;
+  onAddImage?: () => void;
+  dragHandleProps?: any;
   children: React.ReactNode;
 }
 
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import InlineText from "./InlineText";
 
 export default function BlockWrapper({
@@ -22,6 +26,9 @@ export default function BlockWrapper({
   onResize,
   onDelete,
   onTitleChange,
+  type,
+  onAddImage,
+  dragHandleProps,
   children,
 }: BlockWrapperProps) {
   const [isResizing, setIsResizing] = useState(false);
@@ -69,8 +76,14 @@ export default function BlockWrapper({
       `}
       style={{ height: `${height}px` }}
     >
-      <div className="flex-shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-        <div className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none flex-1">
+      <div
+        className="flex-shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center cursor-move"
+        {...dragHandleProps}
+      >
+        <div
+          className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none flex-1"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <InlineText
             value={title}
             onChange={(newVal) => onTitleChange?.(newVal)}
@@ -78,19 +91,34 @@ export default function BlockWrapper({
             tagName="span"
           />
         </div>
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100/50"
-            title="Remove Block"
-            onPointerDown={(e) => e.stopPropagation()} // Prevent DnD start
-          >
-            <X size={14} />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {type === "gallery" && onAddImage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddImage();
+              }}
+              className="text-gray-400 hover:text-blue-500 transition-colors p-1 rounded-md hover:bg-gray-100/50"
+              title="Add Image"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <Plus size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-gray-100/50"
+              title="Remove Block"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Content Content Slot */}

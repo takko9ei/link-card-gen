@@ -224,6 +224,7 @@ export default function Canvas({
                           title={block.title}
                           height={block.height}
                           isOverflow={isOverflow}
+                          type={block.type}
                           onResize={(newHeight) =>
                             onBlockResize?.(column.id, block.id, newHeight)
                           }
@@ -231,6 +232,18 @@ export default function Canvas({
                           onTitleChange={(newTitle) =>
                             onBlockTitleChange?.(column.id, block.id, newTitle)
                           }
+                          onAddImage={() => {
+                            if (block.type === "gallery" && onBlockUpdate) {
+                              const newContent = {
+                                ...block.content,
+                                images: [
+                                  ...block.content.images,
+                                  `https://picsum.photos/seed/${Date.now()}/400/400`,
+                                ],
+                              };
+                              onBlockUpdate(column.id, block.id, newContent);
+                            }
+                          }}
                         >
                           {/* Render Specific Blocks Logic */}
                           {block.type === "header" && (
