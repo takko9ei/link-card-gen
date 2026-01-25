@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import InlineText from "@/components/InlineText";
-import AvatarCropper from "@/components/AvatarCropper";
+import ImageCropperModal from "@/components/ImageCropperModal";
 
 interface HeaderBlockProps {
   content: {
@@ -113,9 +113,13 @@ export default function HeaderBlock({ content, onUpdate }: HeaderBlockProps) {
       </div>
 
       {/* Cropper Modal */}
+
       {isCropperOpen && selectedImage && (
-        <AvatarCropper
+        <ImageCropperModal
+          isOpen={isCropperOpen}
           imageSrc={selectedImage}
+          aspect={1}
+          cropShape="round"
           onCancel={() => setIsCropperOpen(false)}
           onCropComplete={(newAvatarUrl) => {
             handleUpdate("avatar", newAvatarUrl);

@@ -119,7 +119,7 @@ export default function Canvas({
     const activeColumn = findColumn(activeId);
     const overColumn = findColumn(overId);
 
-    if (!activeColumn || !overColumn || activeColumn === overColumn) {
+    if (!activeColumn || !overColumn) {
       return;
     }
 
@@ -161,6 +161,7 @@ export default function Canvas({
   };
 
   const activeBlock = getActiveBlock();
+  const activeColumn = activeId ? findColumn(activeId) : null;
 
   return (
     <DndContext
@@ -255,7 +256,12 @@ export default function Canvas({
                             />
                           )}
                           {block.type === "gallery" && (
-                            <GalleryBlock content={block.content} />
+                            <GalleryBlock
+                              content={block.content}
+                              onUpdate={(newContent) =>
+                                onBlockUpdate?.(column.id, block.id, newContent)
+                              }
+                            />
                           )}
                           {block.type === "text" && (
                             <TextBlock content={block.content} />
@@ -301,7 +307,16 @@ export default function Canvas({
                 <HeaderBlock content={activeBlock.content} />
               )}
               {activeBlock.type === "gallery" && (
-                <GalleryBlock content={activeBlock.content} />
+                <GalleryBlock
+                  content={activeBlock.content}
+                  onUpdate={(newContent) =>
+                    onBlockUpdate?.(
+                      activeColumn?.id || "",
+                      activeBlock.id,
+                      newContent,
+                    )
+                  }
+                />
               )}
               {activeBlock.type === "text" && (
                 <TextBlock content={activeBlock.content} />

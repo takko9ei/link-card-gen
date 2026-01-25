@@ -80,10 +80,7 @@ export default function BlockWrapper({
         className="flex-shrink-0 px-4 py-2 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center cursor-move"
         {...dragHandleProps}
       >
-        <div
-          className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none flex-1"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
+        <div className="font-bold text-xs uppercase tracking-wider text-gray-500 select-none flex-1">
           <InlineText
             value={title}
             onChange={(newVal) => onTitleChange?.(newVal)}
