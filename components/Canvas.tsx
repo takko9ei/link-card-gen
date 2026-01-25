@@ -21,6 +21,7 @@ interface Column {
 interface ProjectState {
   columns: Column[];
   columnGap: number;
+  rowGap: number;
   background: string;
   gridTemplateColumns: string;
 }
@@ -75,7 +76,11 @@ export default function Canvas({
           let currentColumnHeight = 0;
 
           return (
-            <div key={column.id} className="flex flex-col gap-4 min-h-[200px]">
+            <div
+              key={column.id}
+              className="flex flex-col min-h-[200px]"
+              style={{ gap: `${state.rowGap}px` }}
+            >
               {column.blocks.length > 0 ? (
                 column.blocks.map((block) => {
                   const isOverflow =

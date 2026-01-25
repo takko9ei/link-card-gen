@@ -22,6 +22,7 @@ interface Column {
 interface ProjectState {
   columns: Column[];
   columnGap: number;
+  rowGap: number;
   background: string;
   gridTemplateColumns: string;
 }
@@ -76,7 +77,9 @@ export default function Home() {
         ],
       },
     ],
+
     columnGap: 24,
+    rowGap: 15,
     background: "#f3f4f6",
     gridTemplateColumns: "2fr 1fr",
   });
@@ -151,6 +154,68 @@ export default function Home() {
         };
       }),
     }));
+  };
+
+  const addBlock = (type: "header" | "text" | "gallery") => {
+    setProjectState((prev) => {
+      // Create deep copy of columns
+      const newColumns = prev.columns.map((col) => ({
+        ...col,
+        blocks: [...col.blocks],
+      }));
+
+      // We will append to the last column by default
+      if (newColumns.length === 0) return prev;
+
+      const lastColIndex = newColumns.length - 1;
+      const lastCol = newColumns[lastColIndex];
+      const newBlockId = `b-${Date.now()}`;
+
+      let newBlock: Block;
+
+      if (type === "header") {
+        newBlock = {
+          id: newBlockId,
+          type: "header",
+          title: "NEW HEADER",
+          content: {
+            avatar: "https://api.dicebear.com/9.x/avataaars/svg?seed=New",
+            name: "New Name",
+            tags: ["New Tag"],
+            bio: "New bio description.",
+          },
+          height: 160,
+        };
+      } else if (type === "gallery") {
+        newBlock = {
+          id: newBlockId,
+          type: "gallery",
+          title: "NEW GALLERY",
+          content: {
+            images: [
+              "https://picsum.photos/seed/100/400/400",
+              "https://picsum.photos/seed/101/400/400",
+              "https://picsum.photos/seed/102/400/400",
+            ],
+          },
+          height: 300,
+        };
+      } else {
+        newBlock = {
+          id: newBlockId,
+          type: "text",
+          title: "NEW TEXT",
+          content: {
+            text: "Edit this text content.",
+          },
+          height: 120,
+        };
+      }
+
+      lastCol.blocks.push(newBlock);
+
+      return { ...prev, columns: newColumns };
+    });
   };
 
   return (
@@ -251,6 +316,33 @@ export default function Home() {
                 }
                 className="flex-1 p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none"
               />
+            </div>
+
+            {/* Add Content Section */}
+            <div className="space-y-4 border-t border-gray-200 pt-6">
+              <label className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Add Content
+              </label>
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  onClick={() => addBlock("text")}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                >
+                  + Add Text
+                </button>
+                <button
+                  onClick={() => addBlock("gallery")}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                >
+                  + Add Gallery
+                </button>
+                <button
+                  onClick={() => addBlock("header")}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                >
+                  + Add Header
+                </button>
+              </div>
             </div>
           </div>
 
