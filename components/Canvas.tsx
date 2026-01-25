@@ -312,6 +312,11 @@ export default function Canvas({
             );
           })}
         </div>
+
+        {/* Footer Credit */}
+        <div className="absolute bottom-2 right-4 text-[10px] text-gray-400 font-medium opacity-60 select-none pointer-events-none">
+          Portfolio maker by Ameato9ei
+        </div>
       </div>
 
       <DragOverlay dropAnimation={dropAnimation}>
