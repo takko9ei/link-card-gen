@@ -11,6 +11,7 @@ import {
   DragEndEvent,
   defaultDropAnimationSideEffects,
   DropAnimation,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -83,6 +84,134 @@ const dropAnimation: DropAnimation = {
     },
   }),
 };
+
+interface DroppableColumnProps {
+  column: Column;
+  index: number;
+  blockSpacing: number;
+  meta?: { blockOpacity?: number };
+  onBlockResize?: (
+    columnId: string,
+    blockId: string,
+    newHeight: number,
+  ) => void;
+  onBlockUpdate?: (columnId: string, blockId: string, newContent: any) => void;
+  onBlockDelete?: (columnId: string, blockId: string) => void;
+  onBlockTitleChange?: (
+    columnId: string,
+    blockId: string,
+    newTitle: string,
+  ) => void;
+}
+
+function DroppableColumn({
+  column,
+  index,
+  blockSpacing,
+  meta,
+  onBlockResize,
+  onBlockUpdate,
+  onBlockDelete,
+  onBlockTitleChange,
+}: DroppableColumnProps) {
+  const { setNodeRef } = useDroppable({
+    id: column.id,
+  });
+
+  let currentColumnHeight = 0;
+
+  return (
+    <SortableContext
+      id={column.id}
+      items={column.blocks.map((b) => b.id)}
+      strategy={verticalListSortingStrategy}
+    >
+      <div
+        ref={setNodeRef}
+        className="flex flex-col min-h-[200px]"
+        style={{ gap: `${blockSpacing}px` }}
+      >
+        {column.blocks.map((block) => {
+          const isOverflow =
+            currentColumnHeight + block.height > PRESET_CANVAS_HEIGHT;
+          currentColumnHeight += block.height + 16;
+
+          return (
+            <SortableBlock key={block.id} id={block.id}>
+              <BlockWrapper
+                title={block.title}
+                height={block.height}
+                isOverflow={isOverflow}
+                type={block.type}
+                onResize={(newHeight) =>
+                  onBlockResize?.(column.id, block.id, newHeight)
+                }
+                onDelete={() => onBlockDelete?.(column.id, block.id)}
+                onTitleChange={(newTitle) =>
+                  onBlockTitleChange?.(column.id, block.id, newTitle)
+                }
+                onAddImage={
+                  block.type === "gallery" && block.content.images.length < 4
+                    ? () => {
+                        if (onBlockUpdate) {
+                          const newContent = {
+                            ...block.content,
+                            images: [
+                              ...block.content.images,
+                              "https://placehold.co/600x400?text=Image",
+                            ],
+                          };
+                          onBlockUpdate(column.id, block.id, newContent);
+                        }
+                      }
+                    : undefined
+                }
+                blockOpacity={meta?.blockOpacity ?? 1}
+              >
+                {block.type === "header" && (
+                  <HeaderBlock
+                    content={block.content}
+                    onUpdate={(newContent) =>
+                      onBlockUpdate?.(column.id, block.id, newContent)
+                    }
+                  />
+                )}
+                {block.type === "gallery" && (
+                  <GalleryBlock
+                    content={block.content}
+                    onUpdate={(newContent) =>
+                      onBlockUpdate?.(column.id, block.id, newContent)
+                    }
+                  />
+                )}
+                {block.type === "text" && (
+                  <TextBlock
+                    content={block.content}
+                    onUpdate={(newContent) =>
+                      onBlockUpdate?.(column.id, block.id, newContent)
+                    }
+                  />
+                )}
+
+                {!["header", "gallery", "text"].includes(block.type) && (
+                  <div className="p-4 text-center text-gray-400 text-sm">
+                    Unknown Block Type: {block.type}
+                  </div>
+                )}
+              </BlockWrapper>
+            </SortableBlock>
+          );
+        })}
+
+        {column.blocks.length === 0 && (
+          <div className="border-2 border-dashed border-gray-300/50 rounded-lg h-[200px] bg-white/30 backdrop-blur-sm flex items-center justify-center text-gray-400">
+            Column {index + 1}
+          </div>
+        )}
+      </div>
+    </SortableContext>
+  );
+}
 
 export default function Canvas({
   state,
@@ -205,112 +334,19 @@ export default function Canvas({
             gap: `${state.columnGap}px`,
           }}
         >
-          {state.columns.map((column, index) => {
-            // Calculate accumulated height to check for overflow
-            let currentColumnHeight = 0;
-
-            return (
-              <SortableContext
-                key={column.id}
-                id={column.id}
-                items={column.blocks.map((b) => b.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div
-                  className="flex flex-col min-h-[200px]"
-                  style={{ gap: `${state.blockSpacing}px` }}
-                >
-                  {column.blocks.map((block) => {
-                    const isOverflow =
-                      currentColumnHeight + block.height > PRESET_CANVAS_HEIGHT;
-                    currentColumnHeight += block.height + 16; // +16 for gap estimate
-
-                    return (
-                      <SortableBlock key={block.id} id={block.id}>
-                        <BlockWrapper
-                          title={block.title}
-                          height={block.height}
-                          isOverflow={isOverflow}
-                          type={block.type}
-                          onResize={(newHeight) =>
-                            onBlockResize?.(column.id, block.id, newHeight)
-                          }
-                          onDelete={() => onBlockDelete?.(column.id, block.id)}
-                          onTitleChange={(newTitle) =>
-                            onBlockTitleChange?.(column.id, block.id, newTitle)
-                          }
-                          onAddImage={
-                            block.type === "gallery" &&
-                            block.content.images.length < 4
-                              ? () => {
-                                  if (onBlockUpdate) {
-                                    const newContent = {
-                                      ...block.content,
-                                      images: [
-                                        ...block.content.images,
-                                        "https://placehold.co/600x400?text=Image",
-                                      ],
-                                    };
-                                    onBlockUpdate(
-                                      column.id,
-                                      block.id,
-                                      newContent,
-                                    );
-                                  }
-                                }
-                              : undefined
-                          }
-                          blockOpacity={state.meta?.blockOpacity ?? 1}
-                        >
-                          {/* Render Specific Blocks Logic */}
-                          {block.type === "header" && (
-                            <HeaderBlock
-                              content={block.content}
-                              onUpdate={(newContent) =>
-                                onBlockUpdate?.(column.id, block.id, newContent)
-                              }
-                            />
-                          )}
-                          {block.type === "gallery" && (
-                            <GalleryBlock
-                              content={block.content}
-                              onUpdate={(newContent) =>
-                                onBlockUpdate?.(column.id, block.id, newContent)
-                              }
-                            />
-                          )}
-                          {block.type === "text" && (
-                            <TextBlock
-                              content={block.content}
-                              onUpdate={(newContent) =>
-                                onBlockUpdate?.(column.id, block.id, newContent)
-                              }
-                            />
-                          )}
-
-                          {/* Fallback for unknown types */}
-                          {!["header", "gallery", "text"].includes(
-                            block.type,
-                          ) && (
-                            <div className="p-4 text-center text-gray-400 text-sm">
-                              Unknown Block Type: {block.type}
-                            </div>
-                          )}
-                        </BlockWrapper>
-                      </SortableBlock>
-                    );
-                  })}
-
-                  {column.blocks.length === 0 && (
-                    // Empty state for column needs to be droppable, SortableContext covers it if id matches
-                    <div className="border-2 border-dashed border-gray-300/50 rounded-lg h-[200px] bg-white/30 backdrop-blur-sm flex items-center justify-center text-gray-400">
-                      Column {index + 1}
-                    </div>
-                  )}
-                </div>
-              </SortableContext>
-            );
-          })}
+          {state.columns.map((column, index) => (
+            <DroppableColumn
+              key={column.id}
+              column={column}
+              index={index}
+              blockSpacing={state.blockSpacing}
+              meta={state.meta}
+              onBlockResize={onBlockResize}
+              onBlockDelete={onBlockDelete}
+              onBlockTitleChange={onBlockTitleChange}
+              onBlockUpdate={onBlockUpdate}
+            />
+          ))}
         </div>
 
         {/* Footer Credit */}
